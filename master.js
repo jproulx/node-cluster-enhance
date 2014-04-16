@@ -64,7 +64,7 @@ Master.prototype.forkHandler = function (worker) {
         console.error('Cluster timeout when establishing listener');
     }, 5 * 1000);
     worker.on('exit', function () {
-        if (!worker.suicide) {
+        if (!worker.suicide || !worker.killed) {
             console.log('Cluster Death, restarting', worker.id);
             this.fork();
         }
@@ -112,8 +112,9 @@ Master.prototype.stopWorker = function (worker, callback) {
             call(callback, this);
         }.bind(this);
         worker.timeout = setTimeout(finish, 10 * 1000);
+        worker.killed = true;
         worker.on('exit', function () {
-            if (worker.suicide) {
+            if (worker.suicide && worker.killed) {
                 console.log('Cluster Worker Stop caught', worker.id);
                 if (worker.timeout) {
                     clearTimeout(worker.timeout);
