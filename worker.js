@@ -31,7 +31,7 @@ Worker.prototype.run = function workerRun (port) {
     this.app.use(this.domainMiddleware.bind(this));
     this.app.use(this.closingMiddleware.bind(this));
     this.app.use(this.errorMiddleware.bind(this));
-    this.callback.call(null, this.app, this.server);
+    this.callback.call(null, this.app, this.server, express);
     this.app.get('/health', this.healthMiddleware.bind(this));
 };
 Worker.prototype.domainMiddleware = function (request, response, next) {
