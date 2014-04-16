@@ -19,15 +19,6 @@ function Worker (port, callback) {
 Worker.prototype.run = function workerRun (port) {
     this.app     = express();
     this.server  = this.app.listen(port || 8080);
-    this.sockets = [];
-    this.server.on('connection', function (socket) {
-        console.log('Worker Socket Connection');
-        socket.id = this.socketID++;
-        this.sockets.push(socket);
-        socket.on('close', function () {
-            this.sockets[socket.id - 1] = null;
-        }.bind(this));
-    }.bind(this));
     this.app.use(this.domainMiddleware.bind(this));
     this.app.use(this.closingMiddleware.bind(this));
     this.app.use(this.errorMiddleware.bind(this));
@@ -38,13 +29,13 @@ Worker.prototype.domainMiddleware = function (request, response, next) {
     var d = domain.create();
     d.on('error', function (error) {
         console.error('WHAT', error);
-        response.send(500, {
-            'error' : error
-        });
         d.dispose();
         if (cluster.worker) {
             cluster.worker.disconnect();
         }
+        response.send(500, {
+            'error' : error
+        });
     }.bind(this));
     response.on('close',  d.dispose.bind(d));
     response.on('finish', d.dispose.bind(d));
@@ -94,13 +85,6 @@ Worker.prototype.exit = function workerExit () {
     this.server.close(function () {
         console.log('Worker Server close');
         process.exit(0);
-    });
-    // Add this part to manually destroy all the connections.
-    this.sockets.forEach(function (socket) {
-        if (socket) {
-            console.log('Closing', socket.id);
-            socket.destroy();
-        }
     });
     // make sure we close down within 30 seconds
     var timer = setTimeout(function() {
