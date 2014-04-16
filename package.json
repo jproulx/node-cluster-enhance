@@ -22,6 +22,7 @@
   "homepage": "https://github.com/jproulx/node-cluster-enhance",
   "dependencies" : {
     "node-console-logger" : "git://github.com/jproulx/node-console-enhance.git",
-    "express": "^3.x.x"
+    "express": "^3.x.x",
+    "ejs" : "0.8.x"
   }
 }

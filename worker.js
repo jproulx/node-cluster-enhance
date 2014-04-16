@@ -19,6 +19,10 @@ function Worker (port, callback) {
 Worker.prototype.run = function workerRun (port) {
     this.app     = express();
     this.server  = this.app.listen(port || 8080);
+    this.app.use(function (request, response, next) {
+        console.log('SERVING', request.url);
+        return next();
+    });
     this.app.use(this.domainMiddleware.bind(this));
     this.app.use(this.closingMiddleware.bind(this));
     this.app.use(this.errorMiddleware.bind(this));
@@ -29,16 +33,15 @@ Worker.prototype.domainMiddleware = function (request, response, next) {
     var d = domain.create();
     d.on('error', function (error) {
         console.error('WHAT', error);
+        next(error);
         d.dispose();
         if (cluster.worker) {
             cluster.worker.disconnect();
         }
-        response.send(500, {
-            'error' : error
-        });
     }.bind(this));
-    response.on('close',  d.dispose.bind(d));
-    response.on('finish', d.dispose.bind(d));
+    response.on('close',  function () {
+        d.dispose();
+    });
     d.add(request);
     d.add(response);
     return d.run(next);
@@ -52,6 +55,7 @@ Worker.prototype.errorMiddleware = function (error, request, response, next) {
     }
 };
 Worker.prototype.closingMiddleware = function closingMiddleware (request, response, next) {
+    console.log('Closing Middleware');
     if (this.closing) {
         console.log('Server is restarting, connection close');
         response.setHeader('Connection', 'close');
@@ -76,7 +80,7 @@ Worker.prototype.healthMiddleware = function healthMiddleware (request, response
     return response.send(health);
 };
 Worker.prototype.errorHandler = function workerErrorHandler (error) {
-    console.log('Worker Error', arguments);
+    console.error('Worker Error', error);
     this.exit();
 };
 Worker.prototype.exit = function workerExit () {
