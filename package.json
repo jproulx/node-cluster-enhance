@@ -1,11 +1,8 @@
 {
   "name": "node-cluster-enhance",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Enhancements for the built-in cluster module",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jproulx/node-cluster-enhance.git"
@@ -15,7 +12,7 @@
     "cluster"
   ],
   "author": "Jesse Proulx <github@jproulx.net>",
-  "license": "MIT",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/jproulx/node-cluster-enhance/issues"
   },

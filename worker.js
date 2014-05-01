@@ -3,8 +3,8 @@ var cluster = require('cluster');
 var domain  = require('domain');
 var os      = require('os');
 var logger  = require('node-console-enhance');
-logger(console, 'Worker');
 function Worker (port, callback) {
+    logger.enable('Worker');
     this.domain   = domain.create();
     this.callback = callback;
     this.closing  = false;
@@ -86,11 +86,11 @@ Worker.prototype.healthMiddleware = function healthMiddleware (request, response
     return response.send(health);
 };
 Worker.prototype.errorHandler = function workerErrorHandler (error) {
-    console.error('Worker Error', error);
+    console.error('Worker Error', error.message, error.stack);
     this.exit();
 };
 Worker.prototype.exit = function workerExit () {
-    console.log('Worker Exiting');
+    console.info('Worker Exiting');
     this.closing = true;
     this.server.close(function () {
         console.log('Worker Server close');
@@ -105,13 +105,13 @@ Worker.prototype.exit = function workerExit () {
     timer.unref();
 };
 Worker.prototype.sigintHandler = function workerSIGINT () {
-    console.log('Worker SIGINT', arguments);
+    console.info('Worker SIGINT');
     if (!cluster.worker) {
         this.exit();
     }
 };
 Worker.prototype.sigtermHandler = function workerSIGTERM () {
-    console.log('Worker SIGTERM', arguments);
+    console.info('Worker SIGTERM');
     this.exit();
 };
 module.exports = function setupWorker (config, callback) {
