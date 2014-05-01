@@ -3,12 +3,13 @@ var cluster = require('cluster');
 var domain  = require('domain');
 var os      = require('os');
 var logger  = require('node-console-enhance');
-function Worker (port, callback) {
+function Worker (port, configure, callback) {
     logger.enable('Worker');
-    this.domain   = domain.create();
-    this.callback = callback;
-    this.closing  = false;
-    this.socketID = 0;
+    this.domain    = domain.create();
+    this.configure = configure;
+    this.callback  = callback;
+    this.closing   = false;
+    this.socketID  = 0;
     this.domain.on('error', this.errorHandler.bind(this));
     this.domain.run(function () {
         this.run(port);
@@ -21,8 +22,7 @@ Worker.prototype.run = function workerRun (port) {
     this.server  = this.app.listen(port || 8080);
     this.app.use(express.json());
     this.app.use(express.urlencoded());
-    this.app.enable('trust proxy');
-    this.app.set('view engine', 'ejs');
+    this.configure.call(null, this.app, this.server, express);
     this.app.use(this.closingMiddleware.bind(this));
     this.app.use(this.domainMiddleware.bind(this));
     this.app.use(this.app.router);
@@ -114,6 +114,4 @@ Worker.prototype.sigtermHandler = function workerSIGTERM () {
     console.info('Worker SIGTERM');
     this.exit();
 };
-module.exports = function setupWorker (config, callback) {
-    return new Worker(config, callback);
-};
+module.exports = Worker;
