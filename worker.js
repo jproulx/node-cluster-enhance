@@ -1,9 +1,9 @@
-var express = require('express');
-var cluster = require('cluster');
-var domain  = require('domain');
-var os      = require('os');
-var logger  = require('node-console-enhance');
-var http_errors = require('node-http-errors');
+var express    = require('express');
+var cluster    = require('cluster');
+var domain     = require('domain');
+var os         = require('os');
+var logger     = require('node-console-enhance');
+var HTTPErrors = require('http-custom-errors');
 function Worker (port, configure, callback) {
     logger.enable('Worker');
     this.domain    = domain.create();
@@ -30,11 +30,18 @@ Worker.prototype.run = function workerRun (port) {
     this.callback.call(null, this.app, this.server, express);
     this.app.get('/health', this.healthMiddleware.bind(this));
     this.app.use(this.notFoundMiddleware.bind(this));
+    this.app.use(this.standardizeErrorMiddleware.bind(this));
     this.app.use(this.domainErrorMiddleware.bind(this));
     this.app.use(this.errorMiddleware.bind(this));
 };
 Worker.prototype.notFoundMiddleware = function (request, response, next) {
-    return next(new http_errors.NotFoundError(request.url));
+    return next(new HTTPErrors.NotFoundError(request.url));
+};
+Worker.prototype.standardizeErrorMiddleware = function (error, request, response, next) {
+    if (!error.status && !error.code) {
+        error = new HTTPErrors.InternalServerError(error.message || error);
+    }
+    return next(error);
 };
 Worker.prototype.domainMiddleware = function (request, response, next) {
     var d = domain.create();
@@ -58,17 +65,17 @@ Worker.prototype.domainErrorMiddleware = function (error, request, response, nex
     }
 };
 Worker.prototype.errorMiddleware = function (error, request, response, next) {
-    console.error(error.stack || error.message || error);
-    response.status(error.code || 500);
+    console.error(error.stack);
+    response.status(error.code);
     if (request.xhr || request.accepts('json')) {
         return response.send({
-            'status'  : error.status || 'Server Error',
-            'code'    : error.code || 500,
+            'status'  : error.status,
+            'code'    : error.code,
             'message' : error.message,
-            'stack'   : error.stack ? error.stack.split('\n') : []
+            'stack'   : error.stack
         });
     }
-    return response.type('txt').send(error.stack || error.message || error);
+    return response.type('txt').send(error.stack);
 };
 Worker.prototype.closingMiddleware = function closingMiddleware (request, response, next) {
     if (this.closing) {
