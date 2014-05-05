@@ -1,6 +1,6 @@
 {
   "name": "node-cluster-enhance",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Enhancements for the built-in cluster module",
   "main": "index.js",
   "repository": {
@@ -17,9 +17,10 @@
     "url": "https://github.com/jproulx/node-cluster-enhance/issues"
   },
   "homepage": "https://github.com/jproulx/node-cluster-enhance",
-  "dependencies" : {
-    "node-console-logger" : "git://github.com/jproulx/node-console-enhance.git",
+  "dependencies": {
+    "node-console-logger": "git://github.com/jproulx/node-console-enhance.git",
     "express": "^3.x.x",
-    "ejs" : "0.8.x"
+    "ejs": "0.8.x",
+    "node-http-errors": "^1.0.0"
   }
 }
