@@ -48,9 +48,12 @@ Worker.prototype.domainMiddleware = function (request, response, next) {
     d.add(request);
     d.add(response);
     d.on('error', function (error) {
-        d.exit();
-        if (cluster.worker) {
-            cluster.worker.disconnect();
+        // We only need to disconnect for unexpected error types
+        if (error.code >= 500) {
+            d.exit();
+            if (cluster.worker) {
+                cluster.worker.disconnect();
+            }
         }
         return next(error);
     }.bind(this));
@@ -65,14 +68,15 @@ Worker.prototype.domainErrorMiddleware = function (error, request, response, nex
     }
 };
 Worker.prototype.errorMiddleware = function (error, request, response, next) {
-    console.error(error.stack);
+    if (error.code > 404) {
+        console.error(error.stack);
+    }
     response.status(error.code);
     if (request.xhr || request.accepts('json')) {
         return response.send({
             'status'  : error.status,
             'code'    : error.code,
-            'message' : error.message,
-            'stack'   : error.stack
+            'message' : error.message
         });
     }
     return response.type('txt').send(error.stack);
