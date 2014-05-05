@@ -27,14 +27,14 @@ Worker.prototype.run = function workerRun (port) {
     this.app.use(this.closingMiddleware.bind(this));
     this.app.use(this.domainMiddleware.bind(this));
     this.app.use(this.app.router);
-    this.app.use(this.domainErrorMiddleware.bind(this));
-    this.app.use(this.errorMiddleware.bind(this));
     this.callback.call(null, this.app, this.server, express);
     this.app.get('/health', this.healthMiddleware.bind(this));
     this.app.use(this.notFoundMiddleware.bind(this));
+    this.app.use(this.domainErrorMiddleware.bind(this));
+    this.app.use(this.errorMiddleware.bind(this));
 };
 Worker.prototype.notFoundMiddleware = function (request, response, next) {
-    throw new http_errors.NotFoundError(request.url);
+    return next(new http_errors.NotFoundError(request.url));
 };
 Worker.prototype.domainMiddleware = function (request, response, next) {
     var d = domain.create();
@@ -59,15 +59,16 @@ Worker.prototype.domainErrorMiddleware = function (error, request, response, nex
 };
 Worker.prototype.errorMiddleware = function (error, request, response, next) {
     console.error(error.stack || error.message || error);
-    response.status(error.status || 500);
+    response.status(error.code || 500);
     if (request.xhr || request.accepts('json')) {
         return response.send({
+            'status'  : error.status || 'Server Error',
             'code'    : error.code || 500,
             'message' : error.message,
-            'stack'   : error.stack
+            'stack'   : error.stack ? error.stack.split('\n') : []
         });
     }
-    return response.type('text').send(error.stack || error.message || error);
+    return response.type('txt').send(error.stack || error.message || error);
 };
 Worker.prototype.closingMiddleware = function closingMiddleware (request, response, next) {
     if (this.closing) {
