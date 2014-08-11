@@ -73,11 +73,7 @@ Worker.prototype.errorMiddleware = function (error, request, response, next) {
     }
     response.status(error.code);
     if (request.xhr || request.accepts('json')) {
-        return response.send({
-            'status'  : error.status,
-            'code'    : error.code,
-            'message' : error.message
-        });
+        return response.send(error.toJSON());
     }
     return response.type('txt').send(error.stack);
 };
